@@ -295,6 +295,13 @@ window.setCat = function(area, cat) {
   }
 };
 
+  window.setCat = function(area, cat) {
+  activeCat[area] = cat;
+  if (area === 'standings') renderStandings();
+  if (area === 'matches') renderMatches();
+};
+
+  
 // ── FIELD FILTER ─────────────────────────────────────────
 window.setFieldFilter = function(field) {
   if (activeFilterType === 'field') {
