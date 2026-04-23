@@ -341,41 +341,100 @@ function fieldBadge(f) {
 function renderMatches() {
   document.getElementById('match-cats').innerHTML = catTabsHTML('matches');
   const cat = activeCat.matches;
-  const catM = matches.filter(m => m.cat === cat);
+  const catTeams = teams[cat] || [];
+  const FIELDS = ['Haut', 'Bas', 'Gymnase'];
+
+  // Boutons de filtre par terrain (à côté des catégories)
+  const fieldFilterButtons = `
+    <div style="display:flex;gap:6px;margin-left:10px;align-items:center">
+      ${FIELDS.map(f =>
+        `<button onclick="setFieldFilter('${f}')" style="
+          padding:7px 10px;
+          border-radius:8px;
+          border:1px solid ${activeFieldFilter===f?'#850606':'#d1d5db'};
+          background:${activeFieldFilter===f?'#850606':'white'};
+          color:${activeFieldFilter===f?'white':'#374151'};
+          font-size:12px;
+          font-weight:600;
+          cursor:pointer;
+        ">Terrain ${f}</button>`
+      ).join('')}
+      <button onclick="setFieldFilter(null)" style="
+        padding:7px 10px;
+        border-radius:8px;
+        border:1px solid ${activeFieldFilter===null?'#850606':'#d1d5db'};
+        background:${activeFieldFilter===null?'#850606':'white'};
+        color:${activeFieldFilter===null?'white':'#374151'};
+        font-size:12px;
+        font-weight:600;
+        cursor:pointer;
+      ">Tous les terrains</button>
+    </div>
+  `;
+
+  // Filtre par équipe (désactivé si un filtre par terrain est actif)
+  const teamFilterHTML = !activeFieldFilter ? `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+      <select id="team-filter" onchange="setTeamFilter(this.value)" style="flex:1;border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;font-size:13px;background:white;color:#1a1a2e">
+        <option value="">-- Toutes les équipes --</option>
+        ${catTeams.map(t => `<option value="${t.id}" ${activeTeamFilter===t.id?'selected':''}>${t.name}</option>`).join('')}
+      </select>
+    </div>
+  ` : '';
+
+  // Filtrer les matchs
+  let catM = matches.filter(m => m.cat === cat);
+  if (activeTeamFilter) {
+    catM = catM.filter(m => m.home === activeTeamFilter || m.away === activeTeamFilter);
+  }
+  if (activeFieldFilter) {
+    catM = catM.filter(m => m.field === activeFieldFilter);
+  }
+
+  // Séparer les matchs à venir et les résultats
   const upcoming = catM.filter(m => m.scoreHome === null || m.scoreHome === undefined)
-    .sort((a,b) => (a.date||'').localeCompare(b.date||''));
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   const results = catM.filter(m => m.scoreHome !== null && m.scoreHome !== undefined)
-    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 
-  let html = '';
+  // Afficher les boutons de filtre par terrain à côté des catégories
+  document.querySelector('.cat-tabs').innerHTML += fieldFilterButtons;
 
+  let html = teamFilterHTML;
+
+  // Afficher les matchs à venir
   html += `<div class="section-label">Prochains matchs (${upcoming.length})</div>`;
   if (upcoming.length) {
     html += upcoming.map(m => {
-      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}) : '';
+      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+      const homeStyle = activeTeamFilter === m.home ? 'color:#850606;font-weight:700' : '';
+      const awayStyle = activeTeamFilter === m.away ? 'color:#850606;font-weight:700' : '';
       return `<div class="match-card">
         <div class="match-top">
-          <div class="match-teams">${teamName(cat,m.home)} <span class="match-vs">vs</span> ${teamName(cat,m.away)}</div>
+          <div class="match-teams"><span style="${homeStyle}">${teamName(cat, m.home)}</span> <span class="match-vs">vs</span> <span style="${awayStyle}">${teamName(cat, m.away)}</span></div>
           <span class="badge badge-upcoming">À venir</span>
         </div>
-        <div class="match-meta">${fieldBadge(m.field)}<span style="font-size:12px;color:#6b7280">${d}${m.time?' · '+m.time:''}</span></div>
+        <div class="match-meta">${fieldBadge(m.field)}<span style="font-size:12px;color:#6b7280">${d}${m.time ? ' · ' + m.time : ''}</span></div>
       </div>`;
     }).join('');
   } else {
     html += '<div class="empty" style="padding:12px">Aucun match à venir</div>';
   }
 
+  // Afficher les résultats
   html += `<div class="section-label">Résultats (${results.length})</div>`;
   if (results.length) {
     html += results.map(m => {
       const hw = Number(m.scoreHome) > Number(m.scoreAway);
       const draw = Number(m.scoreHome) === Number(m.scoreAway);
-      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}) : '';
+      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
       const badgeCls = draw ? 'badge-draw' : hw ? 'badge-win' : 'badge-loss';
-      const badgeTxt = draw ? 'Nul' : hw ? teamName(cat,m.home)+' gagne' : teamName(cat,m.away)+' gagne';
+      const badgeTxt = draw ? 'Nul' : hw ? teamName(cat, m.home) + ' gagne' : teamName(cat, m.away) + ' gagne';
+      const homeStyle = activeTeamFilter === m.home ? 'color:#850606;font-weight:700' : '';
+      const awayStyle = activeTeamFilter === m.away ? 'color:#850606;font-weight:700' : '';
       return `<div class="match-card">
         <div class="match-top">
-          <div class="match-teams">${teamName(cat,m.home)} <span class="match-vs">vs</span> ${teamName(cat,m.away)}</div>
+          <div class="match-teams"><span style="${homeStyle}">${teamName(cat, m.home)}</span> <span class="match-vs">vs</span> <span style="${awayStyle}">${teamName(cat, m.away)}</span></div>
           <div class="match-score">${m.scoreHome} – ${m.scoreAway}</div>
         </div>
         <div class="match-meta">${fieldBadge(m.field)}<span style="font-size:12px;color:#6b7280">${d}</span><span class="badge ${badgeCls}">${badgeTxt}</span></div>
@@ -388,6 +447,18 @@ function renderMatches() {
   document.getElementById('matches-content').innerHTML = html;
 }
 
+window.setFieldFilter = function(field) {
+  activeFieldFilter = field;
+  activeTeamFilter = null; // Réinitialiser le filtre par équipe
+  renderMatches();
+};
+
+window.setTeamFilter = function(teamId) {
+  activeTeamFilter = teamId || null;
+  activeFieldFilter = null; // Réinitialiser le filtre par terrain
+  renderMatches();
+};
+  
 // ── ADMIN PASSWORD ───────────────────────────────────────
 function handleAdminTab() {
   if (adminUnlocked) { renderAdminContent(); return; }
