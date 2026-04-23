@@ -649,7 +649,13 @@ window.renderTeamList = function() {
   if (!cat) { tl.innerHTML = ''; return; }
   const list = teams[cat] || [];
   tl.innerHTML = list.length ? list.map(t =>
-    `<div class="team-row">${t.name}<button class="btn btn-danger" onclick="removeTeam('${cat}','${t.id}')">Supprimer</button></div>`
+    `<div class="team-row">
+      ${t.name}
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-sm" style="background:#e0e7ff; color:#1e40af; border-color:#bfdbfe;" onclick="renameTeam('${cat}','${t.id}','${t.name.replace(/'/g, "\\'")}')">✏️ Renommer</button>
+        <button class="btn btn-danger" onclick="removeTeam('${cat}','${t.id}')">Supprimer</button>
+      </div>
+    </div>`
   ).join('') : '<div class="empty" style="padding:10px">Aucune équipe.</div>';
 };
 
@@ -668,6 +674,27 @@ window.removeTeam = async function(cat, id) {
   await setDoc(doc(db, 'config', 'teams_' + cat), { teams: list });
   const toDelete = matches.filter(m => m.cat === cat && (m.home === id || m.away === id));
   for (const m of toDelete) await deleteDoc(doc(db, 'matches', m.id));
+};
+
+  window.renameTeam = async function(cat, teamId, currentName) {
+  const newName = prompt("Nouveau nom de l'équipe :", currentName);
+  if (!newName || newName.trim() === "") return;
+  if (newName.trim() === currentName) return;
+  
+  const list = [...(teams[cat] || [])];
+  const index = list.findIndex(t => t.id === teamId);
+  if (index === -1) return;
+  
+  list[index].name = newName.trim();
+  await setDoc(doc(db, 'config', 'teams_' + cat), { teams: list });
+  
+  // Optionnel : mettre à jour les matchs qui contiennent cette équipe
+  const matchesToUpdate = matches.filter(m => m.cat === cat && (m.home === teamId || m.away === teamId));
+  for (const m of matchesToUpdate) {
+    await updateDoc(doc(db, 'matches', m.id), {});
+  }
+  
+  renderTeamList(); // Rafraîchit l'affichage
 };
 
 window.addMatch = async function() {
