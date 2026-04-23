@@ -59,9 +59,9 @@ tr:hover td { background: #f9fafb; }
 .badge-loss { background: #fee2e2; color: #991b1b; }
 .badge-draw { background: #f3f4f6; color: #374151; }
 .field-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
-.field-up { background: #dcfce7; color: #166534; }
-.field-Down { background: #fee2e2; color: #991b1b; }
-.field-Inside { background: #dbeafe; color: #1d4ed8; }
+.field-Haut { background: #dcfce7; color: #166534; }
+.field-Bas { background: #fee2e2; color: #991b1b; }
+.field-Gymnase { background: #dbeafe; color: #1d4ed8; }
 
 /* SECTION LABEL */
 .section-label { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin: 16px 0 8px; }
@@ -437,7 +437,7 @@ function renderAdminContent() {
     <div class="section-label">Ajouter un match</div>
     <div class="grid2">
       <select id="m-cat" onchange="updateTeamSelects()"><option value="">Catégorie</option>${allCatTeams}</select>
-      <select id="m-field"><option value="">Terrain</option><option value="Up">Terrain Up</option><option value="Down">Terrain Down</option><option value="Inside">Terrain Inside</option></select>
+      <select id="m-field"><option value="">Terrain</option><option value="Haut">Terrain Haut</option><option value="Bas">Terrain Bas</option><option value="Gymnase">Terrain Gymnase</option></select>
     </div>
     <div class="grid3">
       <select id="m-home"><option value="">Domicile</option></select>
@@ -445,7 +445,7 @@ function renderAdminContent() {
       <select id="m-away"><option value="">Extérieur</option></select>
     </div>
     <div class="grid2">
-      <input type="date" id="m-date" />
+      <input type="date" id="m-date" value="2026-09-05" />
       <input type="time" id="m-time" />
     </div>
     <button class="btn btn-primary" onclick="addMatch()">Ajouter le match</button>
