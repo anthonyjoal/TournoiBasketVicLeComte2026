@@ -486,6 +486,13 @@ function getStandings(cat) {
   });
 }
 
+  function catTabsHTML(area) {
+  return CATS.map(c =>
+    `<button class="cat-tab ${activeCat[area] === c ? 'active' : ''}" onclick="setCat('${area}','${c}')">${c}</button>`
+  ).join('');
+}
+
+  
 function renderStandings() {
   document.getElementById('stand-cats').innerHTML = catTabsHTML('standings');
   const rows = getStandings(activeCat.standings);
