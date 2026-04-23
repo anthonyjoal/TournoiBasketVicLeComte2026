@@ -492,7 +492,6 @@ function getStandings(cat) {
     return (b.pf - b.pa) - (a.pf - a.pa);
   });
 }
-
   function catTabsHTML(area) {
   return CATS.map(c =>
     `<button class="cat-tab ${activeCat[area] === c ? 'active' : ''}" onclick="setCat('${area}','${c}')">${c}</button>`
