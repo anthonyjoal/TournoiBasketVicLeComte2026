@@ -1,0 +1,388 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.app { max-width: 740px; margin: 0 auto; padding: 1rem; font-family: var(--font-sans); }
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.logo { width: 36px; height: 36px; border-radius: 50%; background: #E6F1FB; display: flex; align-items: center; justify-content: center; }
+.tabs { display: flex; gap: 0; border-bottom: 0.5px solid var(--color-border-tertiary); margin-bottom: 1.25rem; overflow-x: auto; }
+.tab { padding: 9px 14px; font-size: 13px; cursor: pointer; border: none; background: none; color: var(--color-text-secondary); border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab.active { color: var(--color-text-primary); border-bottom: 2px solid #378ADD; font-weight: 500; }
+.section { display: none; }
+.section.active { display: block; }
+.cat-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+.cat-tab { padding: 5px 12px; font-size: 12px; border-radius: 999px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); cursor: pointer; }
+.cat-tab.active { background: #185FA5; color: #fff; border-color: #185FA5; font-weight: 500; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-size: 11px; font-weight: 500; color: var(--color-text-secondary); padding: 7px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); white-space: nowrap; }
+td { padding: 8px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); color: var(--color-text-primary); }
+tr:hover td { background: var(--color-background-secondary); }
+.pts-cell { font-weight: 500; color: #185FA5; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+.badge-win { background: #EAF3DE; color: #3B6D11; }
+.badge-loss { background: #FCEBEB; color: #A32D2D; }
+.badge-upcoming { background: #E6F1FB; color: #185FA5; }
+.field-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; margin-right: 4px; }
+.field-up { background: #EAF3DE; color: #3B6D11; }
+.field-down { background: #FAECE7; color: #993C1D; }
+.field-inside { background: #E6F1FB; color: #185FA5; }
+.match-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 0.9rem 1rem; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.match-teams { font-weight: 500; font-size: 14px; }
+.match-meta { font-size: 11px; color: var(--color-text-secondary); margin-top: 3px; }
+.match-score { font-size: 20px; font-weight: 500; text-align: center; min-width: 70px; }
+.section-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.25rem 0 0.6rem; }
+input, select { width: 100%; padding: 7px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); font-size: 13px; }
+.btn { padding: 8px 16px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-primary); font-size: 13px; cursor: pointer; font-weight: 500; }
+.btn-primary { background: #185FA5; color: #fff; border-color: #185FA5; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { background: #FCEBEB; color: #A32D2D; border-color: #F7C1C1; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.grid3 { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; margin-bottom: 8px; align-items: center; }
+.vs { font-size: 12px; color: var(--color-text-secondary); text-align: center; }
+.qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 0; }
+.qr-box { background: white; padding: 14px; border-radius: var(--border-radius-lg); border: 0.5px solid var(--color-border-tertiary); }
+.empty { text-align: center; color: var(--color-text-secondary); padding: 1.5rem; font-size: 13px; }
+.rank-gold { color: #BA7517; font-weight: 700; }
+.rank-silver { color: #888780; font-weight: 700; }
+.rank-bronze { color: #854F0B; font-weight: 700; }
+</style>
+
+<div class="app">
+  <div class="header">
+    <div class="logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93 19.07 19.07M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    </div>
+    <div>
+      <div style="font-size:16px;font-weight:500;color:var(--color-text-primary)" id="league-display">Basketball Challenge</div>
+      <div style="font-size:11px;color:var(--color-text-secondary)">U11M · U11F · U13M · U13F</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('standings')">Classement</button>
+    <button class="tab" onclick="showTab('matches')">Matchs</button>
+    <button class="tab" onclick="showTab('admin')">Admin</button>
+    <button class="tab" onclick="showTab('qr')">QR Code</button>
+  </div>
+
+  <!-- STANDINGS -->
+  <div class="section active" id="tab-standings">
+    <div class="cat-tabs" id="stand-cats"></div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Équipe</th><th>J</th><th>V</th><th>D</th><th>Pts+</th><th>Pts-</th><th>+/-</th><th>Pts</th></tr>
+      </thead>
+      <tbody id="standings-body"></tbody>
+    </table>
+    <div class="empty" id="stand-empty" style="display:none">Aucune équipe dans cette catégorie.</div>
+  </div>
+
+  <!-- MATCHES -->
+  <div class="section" id="tab-matches">
+    <div class="cat-tabs" id="match-cats"></div>
+    <div class="section-label">Prochains matchs</div>
+    <div id="upcoming-list"></div>
+    <div class="section-label">Résultats</div>
+    <div id="results-list"></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="section" id="tab-admin">
+    <div style="font-size:12px;color:var(--color-text-secondary);background:var(--color-background-secondary);padding:9px 12px;border-radius:var(--border-radius-md);margin-bottom:1.25rem;">
+      Panneau administrateur — gérez les équipes, matchs et scores.
+    </div>
+
+    <div class="section-label">Nom du championnat</div>
+    <div style="display:flex;gap:8px;margin-bottom:1.25rem;">
+      <input type="text" id="league-input" placeholder="Ex: Tournoi de Lyon 2025" style="flex:1" />
+      <button class="btn btn-primary" onclick="saveLeague()">OK</button>
+    </div>
+
+    <div class="section-label">Ajouter un match</div>
+    <div class="grid2" style="margin-bottom:8px;">
+      <select id="m-cat"><option value="">Catégorie</option><option>U11M</option><option>U11F</option><option>U13M</option><option>U13F</option></select>
+      <select id="m-field"><option value="">Terrain</option><option value="Up">Terrain Up</option><option value="Down">Terrain Down</option><option value="Inside">Terrain Inside</option></select>
+    </div>
+    <div class="grid3">
+      <select id="m-home"><option value="">Domicile</option></select>
+      <span class="vs">vs</span>
+      <select id="m-away"><option value="">Extérieur</option></select>
+    </div>
+    <div class="grid2">
+      <input type="date" id="m-date" />
+      <input type="time" id="m-time" />
+    </div>
+    <button class="btn btn-primary" onclick="addMatch()" style="width:100%;margin-bottom:1.25rem;">Ajouter le match</button>
+
+    <div class="section-label">Entrer un résultat</div>
+    <select id="r-match" style="margin-bottom:8px;"><option value="">Sélectionner un match à scorer</option></select>
+    <div class="grid3" style="margin-bottom:8px;">
+      <input type="number" id="r-home" placeholder="Score domicile" min="0" />
+      <span class="vs">—</span>
+      <input type="number" id="r-away" placeholder="Score extérieur" min="0" />
+    </div>
+    <button class="btn btn-primary" onclick="enterResult()" style="width:100%;margin-bottom:1.25rem;">Valider le résultat</button>
+
+    <div class="section-label">Gérer les équipes</div>
+    <div class="grid2" style="margin-bottom:8px;">
+      <select id="t-cat"><option value="">Catégorie</option><option>U11M</option><option>U11F</option><option>U13M</option><option>U13F</option></select>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="t-name" placeholder="Nom équipe" />
+        <button class="btn btn-primary btn-sm" onclick="addTeam()">+</button>
+      </div>
+    </div>
+    <div id="team-list"></div>
+  </div>
+
+  <!-- QR -->
+  <div class="section" id="tab-qr">
+    <div class="qr-wrap">
+      <div style="font-size:13px;color:var(--color-text-secondary);text-align:center;max-width:360px;">
+        Partagez ce QR code avec tous les joueurs et supporters pour accéder au classement et aux matchs.
+      </div>
+      <div class="qr-box" id="qr-box"></div>
+      <div style="font-size:12px;color:var(--color-text-secondary)" id="qr-url-display">https://basketball-challenge.netlify.app</div>
+      <input type="text" id="qr-url-input" placeholder="Votre URL une fois hébergé..." style="max-width:380px;" oninput="renderQR()" />
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm" onclick="copyURL()">Copier le lien</button>
+        <button class="btn btn-primary btn-sm" onclick="downloadQR()">Télécharger le QR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const CATS = ['U11M','U11F','U13M','U13F'];
+const TEAMS = {
+  U11M: ['Équipe A','Équipe B','Équipe C','Équipe D','Équipe E','Équipe F'],
+  U11F: ['Équipe A','Équipe B','Équipe C','Équipe D','Équipe E'],
+  U13M: ['Équipe A','Équipe B','Équipe C','Équipe D'],
+  U13F: ['Équipe A','Équipe B','Équipe C','Équipe D','Équipe E','Équipe F']
+};
+
+let state = {
+  leagueName: 'Basketball Challenge',
+  teams: {},
+  matches: []
+};
+
+CATS.forEach(c => { state.teams[c] = TEAMS[c].map((n,i) => ({ id: c+'_'+i, name: n, cat: c })); });
+
+function save() { try { localStorage.setItem('bball2', JSON.stringify(state)); } catch(e) {} }
+function load() { try { const d = localStorage.getItem('bball2'); if(d) state = JSON.parse(d); } catch(e) {} }
+load();
+
+let activeCat = { standings: 'U11M', matches: 'U11M' };
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['standings','matches','admin','qr'][i] === name);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'standings') renderStandings();
+  if (name === 'matches') renderMatches();
+  if (name === 'admin') renderAdmin();
+  if (name === 'qr') renderQR();
+}
+
+function catTabsHTML(area) {
+  return CATS.map(c => `<button class="cat-tab ${activeCat[area]===c?'active':''}" onclick="setcat('${area}','${c}')">${c}</button>`).join('');
+}
+
+function setcat(area, cat) {
+  activeCat[area] = cat;
+  if (area === 'standings') renderStandings();
+  if (area === 'matches') renderMatches();
+}
+
+function getTeams(cat) { return state.teams[cat] || []; }
+
+function getStandings(cat) {
+  const st = {};
+  getTeams(cat).forEach(t => { st[t.id] = { id: t.id, name: t.name, p:0, w:0, l:0, pf:0, pa:0 }; });
+  state.matches.filter(m => m.cat === cat && m.scoreHome !== null).forEach(m => {
+    const h = st[m.home], a = st[m.away];
+    if (!h || !a) return;
+    h.p++; a.p++;
+    h.pf += m.scoreHome; h.pa += m.scoreAway;
+    a.pf += m.scoreAway; a.pa += m.scoreHome;
+    if (m.scoreHome > m.scoreAway) { h.w++; a.l++; } else { a.w++; h.l++; }
+  });
+  return Object.values(st).sort((a,b) => {
+    const pa = a.w*2+a.l, pb = b.w*2+b.l;
+    if (pb !== pa) return pb - pa;
+    return (b.pf-b.pa) - (a.pf-a.pa);
+  });
+}
+
+function renderStandings() {
+  document.getElementById('stand-cats').innerHTML = catTabsHTML('standings');
+  const cat = activeCat.standings;
+  const rows = getStandings(cat);
+  const empty = document.getElementById('stand-empty');
+  const tbody = document.getElementById('standings-body');
+  if (!rows.length) { tbody.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  const rankClass = ['rank-gold','rank-silver','rank-bronze'];
+  tbody.innerHTML = rows.map((r,i) => {
+    const pts = r.w*2 + r.l;
+    const diff = r.pf - r.pa;
+    return `<tr>
+      <td><span class="${rankClass[i]||''}">${i+1}</span></td>
+      <td style="font-weight:500">${r.name}</td>
+      <td>${r.p}</td><td>${r.w}</td><td>${r.l}</td>
+      <td>${r.pf}</td><td>${r.pa}</td>
+      <td style="color:${diff>=0?'#3B6D11':'#A32D2D'}">${diff>0?'+'+diff:diff}</td>
+      <td class="pts-cell">${pts}</td>
+    </tr>`;
+  }).join('');
+}
+
+function fieldBadge(f) {
+  const cls = {Up:'field-up',Down:'field-down',Inside:'field-inside'};
+  return `<span class="field-badge ${cls[f]||''}">Terrain ${f||'?'}</span>`;
+}
+
+function teamName(cat, id) {
+  const t = (state.teams[cat]||[]).find(x => x.id === id);
+  return t ? t.name : '?';
+}
+
+function renderMatches() {
+  document.getElementById('match-cats').innerHTML = catTabsHTML('matches');
+  const cat = activeCat.matches;
+  const catMatches = state.matches.filter(m => m.cat === cat);
+  const upcoming = catMatches.filter(m => m.scoreHome === null).sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  const results = catMatches.filter(m => m.scoreHome !== null).sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  document.getElementById('upcoming-list').innerHTML = upcoming.length ? upcoming.map(m => {
+    const d = m.date ? new Date(m.date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}) : '';
+    return `<div class="match-card">
+      <div style="flex:1">
+        <div class="match-teams">${teamName(cat,m.home)} <span style="color:var(--color-text-secondary);font-weight:400">vs</span> ${teamName(cat,m.away)}</div>
+        <div class="match-meta">${fieldBadge(m.field)}${d}${m.time?' · '+m.time:''}</div>
+      </div>
+      <span class="badge badge-upcoming">À venir</span>
+    </div>`;
+  }).join('') : '<div class="empty">Aucun match à venir</div>';
+
+  document.getElementById('results-list').innerHTML = results.length ? results.map(m => {
+    const hw = m.scoreHome > m.scoreAway;
+    const d = m.date ? new Date(m.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}) : '';
+    return `<div class="match-card">
+      <div style="flex:1">
+        <div class="match-teams">${teamName(cat,m.home)} <span style="color:var(--color-text-secondary);font-weight:400">vs</span> ${teamName(cat,m.away)}</div>
+        <div class="match-meta">${fieldBadge(m.field)}${d}</div>
+      </div>
+      <div class="match-score">${m.scoreHome} – ${m.scoreAway}</div>
+      <span class="badge ${hw?'badge-win':'badge-loss'}">${hw?teamName(cat,m.home):teamName(cat,m.away)} gagne</span>
+    </div>`;
+  }).join('') : '<div class="empty">Aucun résultat</div>';
+}
+
+function renderAdmin() {
+  document.getElementById('league-input').value = state.leagueName;
+  updateHomeAway();
+  updateResultSelect();
+
+  const tl = document.getElementById('team-list');
+  const selCat = document.getElementById('t-cat').value;
+  if (!selCat) { tl.innerHTML = '<div class="empty">Sélectionnez une catégorie pour voir les équipes.</div>'; return; }
+  const teams = getTeams(selCat);
+  tl.innerHTML = teams.length ? teams.map(t =>
+    `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:5px;font-size:13px;">
+      ${t.name}
+      <button class="btn btn-danger btn-sm" onclick="removeTeam('${selCat}','${t.id}')">Supprimer</button>
+    </div>`
+  ).join('') : '<div class="empty">Aucune équipe.</div>';
+}
+
+document.getElementById('t-cat').addEventListener('change', renderAdmin);
+
+function updateHomeAway() {
+  const cat = document.getElementById('m-cat').value;
+  const teams = cat ? getTeams(cat) : [];
+  ['m-home','m-away'].forEach((id,i) => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">${i===0?'Domicile':'Extérieur'}</option>` +
+      teams.map(t => `<option value="${t.id}"${t.id===cur?' selected':''}>${t.name}</option>`).join('');
+  });
+}
+
+document.getElementById('m-cat').addEventListener('change', updateHomeAway);
+
+function updateResultSelect() {
+  const pending = state.matches.filter(m => m.scoreHome === null);
+  document.getElementById('r-match').innerHTML = '<option value="">Sélectionner un match</option>' +
+    pending.map(m => `<option value="${m.id}">[${m.cat}] ${teamName(m.cat,m.home)} vs ${teamName(m.cat,m.away)} (${m.date||'?'})</option>`).join('');
+}
+
+function saveLeague() {
+  const v = document.getElementById('league-input').value.trim();
+  if (v) { state.leagueName = v; save(); document.getElementById('league-display').textContent = v; }
+}
+
+function addTeam() {
+  const cat = document.getElementById('t-cat').value;
+  const name = document.getElementById('t-name').value.trim();
+  if (!cat || !name) return;
+  state.teams[cat] = state.teams[cat] || [];
+  state.teams[cat].push({ id: cat+'_'+Date.now(), name, cat });
+  document.getElementById('t-name').value = '';
+  save(); renderAdmin();
+}
+
+function removeTeam(cat, id) {
+  state.teams[cat] = (state.teams[cat]||[]).filter(t => t.id !== id);
+  state.matches = state.matches.filter(m => !(m.cat===cat && (m.home===id||m.away===id)));
+  save(); renderAdmin();
+}
+
+function addMatch() {
+  const cat = document.getElementById('m-cat').value;
+  const field = document.getElementById('m-field').value;
+  const home = document.getElementById('m-home').value;
+  const away = document.getElementById('m-away').value;
+  const date = document.getElementById('m-date').value;
+  const time = document.getElementById('m-time').value;
+  if (!cat||!home||!away||home===away) { alert('Sélectionnez une catégorie et deux équipes différentes.'); return; }
+  if (!date) { alert('Choisissez une date.'); return; }
+  state.matches.push({ id: 'M'+Date.now(), cat, field, home, away, date, time, scoreHome: null, scoreAway: null });
+  save(); renderAdmin();
+}
+
+function enterResult() {
+  const mid = document.getElementById('r-match').value;
+  const sh = parseInt(document.getElementById('r-home').value);
+  const sa = parseInt(document.getElementById('r-away').value);
+  if (!mid) { alert('Sélectionnez un match.'); return; }
+  if (isNaN(sh)||isNaN(sa)) { alert('Entrez les deux scores.'); return; }
+  const m = state.matches.find(x => x.id === mid);
+  if (m) { m.scoreHome = sh; m.scoreAway = sa; }
+  document.getElementById('r-home').value = '';
+  document.getElementById('r-away').value = '';
+  save(); renderAdmin();
+}
+
+function renderQR() {
+  const url = document.getElementById('qr-url-input').value || 'https://basketball-challenge.netlify.app';
+  document.getElementById('qr-url-display').textContent = url;
+  const box = document.getElementById('qr-box');
+  box.innerHTML = '';
+  new QRCode(box, { text: url, width: 190, height: 190, colorDark: '#185FA5', colorLight: '#ffffff' });
+}
+
+function copyURL() {
+  navigator.clipboard.writeText(document.getElementById('qr-url-display').textContent).then(() => alert('Lien copié !'));
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qr-box canvas');
+  if (!canvas) return;
+  const a = document.createElement('a'); a.download = 'qrcode-basket.png'; a.href = canvas.toDataURL(); a.click();
+}
+
+renderStandings();
+</script>
