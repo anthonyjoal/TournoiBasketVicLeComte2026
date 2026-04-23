@@ -231,23 +231,29 @@ async function initData() {
     }
   }
 
-  // Listen teams
-  for (const cat of CATS) {
-    onSnapshot(doc(db, 'config', 'teams_' + cat), snap => {
-      if (snap.exists()) {
-        teams[cat] = snap.data().teams || [];
-        refresh();
-      }
-    });
-  }
-
-  // Listen matches
-  onSnapshot(collection(db, 'matches'), snap => {
-    matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    refresh();
+ // Écouteur pour les équipes
+for (const cat of CATS) {
+  onSnapshot(doc(db, 'config', 'teams_' + cat), snap => {
+    if (snap.exists()) {
+      teams[cat] = snap.data().teams || [];
+      console.log(`Équipes ${cat} mises à jour :`, teams[cat]); // Ajoute cette ligne pour le débogage
+      refresh();
+    } else {
+      console.error(`Document teams_${cat} non trouvé.`);
+    }
   });
 }
 
+// Écouteur pour les matchs
+onSnapshot(collection(db, 'matches'), snap => {
+  matches = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  console.log('Matchs mis à jour :', matches); // Ajoute cette ligne pour le débogage
+  refresh();
+});
+}
+
+
+  
 function refresh() {
   const active = document.querySelector('.section.active');
   if (!active) return;
