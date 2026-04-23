@@ -211,12 +211,14 @@ const DEFAULT_TEAMS = {
 };
 
 // ── STATE ────────────────────────────────────────────────
-let teams = {};      // { cat: [{id, name, cat}] }
-let matches = [];    // [{id, cat, field, home, away, date, time, scoreHome, scoreAway}]
+let teams = {};          // { cat: [{id, name, cat}] }
+let matches = [];        // [{id, cat, field, home, away, date, time, scoreHome, scoreAway}]
 let activeCat = { standings: 'U11M', matches: 'U11M' };
+let activeTeamFilter = null;
+let activeFieldFilter = null;
 let adminUnlocked = false;
 let unsubTeams = null, unsubMatches = null;
-let activeFilterType = 'category'; // Par défaut, on filtre par catégorie
+let activeFilterType = 'category'; // Type de filtre actif : 'category' ou 'field'
 
 // ── INIT FIREBASE LISTENERS ──────────────────────────────
 async function initData() {
@@ -268,12 +270,18 @@ window.showTab = function(name) {
   if (name === 'qr') renderQR();
 };
 
+// ── FILTER TYPE ──────────────────────────────────────────
+window.setFilterType = function(type) {
+  activeFilterType = type;
+  if (type === 'category') {
+    activeFieldFilter = null; // Réinitialiser le filtre par terrain
+  } else {
+    activeCat.matches = 'U11M'; // Réinitialiser la catégorie active
+  }
+  renderMatches();
+};
+
 // ── CATEGORY TABS ────────────────────────────────────────
-function catTabsHTML(area) {
-  return CATS.map(c =>
-    `<button class="cat-tab ${activeCat[area]===c?'active':''}" onclick="setCat('${area}','${c}')">${c}</button>`
-  ).join('');
-}
 window.setCat = function(area, cat) {
   if (activeFilterType === 'category') {
     activeCat[area] = cat;
@@ -288,64 +296,6 @@ window.setFieldFilter = function(field) {
     renderMatches();
   }
 };
-  window.setFilterType = function(type) {
-  activeFilterType = type;
-  if (type === 'category') {
-    activeFieldFilter = null; // Réinitialiser le filtre par terrain
-  } else {
-    activeCat.matches = 'U11M'; // Réinitialiser la catégorie active
-  }
-  renderMatches();
-};
-
-// ── STANDINGS ────────────────────────────────────────────
-function getStandings(cat) {
-  const st = {};
-  (teams[cat] || []).forEach(t => { st[t.id] = { id: t.id, name: t.name, p:0, w:0, l:0, d:0, pf:0, pa:0 }; });
-  matches.filter(m => m.cat === cat && m.scoreHome !== null && m.scoreHome !== undefined).forEach(m => {
-    const h = st[m.home], a = st[m.away];
-    if (!h || !a) return;
-    h.p++; a.p++;
-    h.pf += Number(m.scoreHome); h.pa += Number(m.scoreAway);
-    a.pf += Number(m.scoreAway); a.pa += Number(m.scoreHome);
-    if (m.scoreHome > m.scoreAway) { h.w++; a.l++; }
-    else if (m.scoreAway > m.scoreHome) { a.w++; h.l++; }
-    else { h.d++; a.d++; }
-  });
-  return Object.values(st).sort((a, b) => {
-    const pa = a.w*2 + a.d, pb = b.w*2 + b.d;
-    if (pb !== pa) return pb - pa;
-    return (b.pf - b.pa) - (a.pf - a.pa);
-  });
-}
-
-function renderStandings() {
-  document.getElementById('stand-cats').innerHTML = catTabsHTML('standings');
-  const rows = getStandings(activeCat.standings);
-  const rankCls = ['rank-gold','rank-silver','rank-bronze'];
-  const html = rows.length ? `
-    <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
-    <table>
-      <thead><tr>
-        <th>#</th><th>Équipe</th><th>J</th><th>V</th><th>N</th><th>D</th><th>Pts+</th><th>Pts-</th><th>+/-</th><th>Pts</th>
-      </tr></thead>
-      <tbody>
-        ${rows.map((r,i) => {
-          const pts = r.w*2 + r.d;
-          const diff = r.pf - r.pa;
-          return `<tr>
-            <td><span class="${rankCls[i]||''}" style="font-weight:600">${i+1}</span></td>
-            <td class="team-name">${r.name}</td>
-            <td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
-            <td>${r.pf}</td><td>${r.pa}</td>
-            <td style="color:${diff>=0?'#166534':'#991b1b'};font-weight:500">${diff>0?'+'+diff:diff}</td>
-            <td class="pts-cell">${pts}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table></div>` : '<div class="empty">Aucune équipe dans cette catégorie.</div>';
-  document.getElementById('standings-content').innerHTML = html;
-}
 
 // ── MATCHES ──────────────────────────────────────────────
 function teamName(cat, id) {
@@ -484,16 +434,56 @@ function renderMatches() {
 
   document.getElementById('matches-content').innerHTML = html;
 }
-  
-window.setFilterType = function(type) {
-  activeFilterType = type;
-  if (type === 'category') {
-    activeFieldFilter = null; // Réinitialiser le filtre par terrain
-  } else {
-    activeCat.matches = 'U11M'; // Réinitialiser la catégorie active
-  }
-  renderMatches();
-};
+
+// ── STANDINGS ────────────────────────────────────────────
+function getStandings(cat) {
+  const st = {};
+  (teams[cat] || []).forEach(t => { st[t.id] = { id: t.id, name: t.name, p:0, w:0, l:0, d:0, pf:0, pa:0 }; });
+  matches.filter(m => m.cat === cat && m.scoreHome !== null && m.scoreHome !== undefined).forEach(m => {
+    const h = st[m.home], a = st[m.away];
+    if (!h || !a) return;
+    h.p++; a.p++;
+    h.pf += Number(m.scoreHome); h.pa += Number(m.scoreAway);
+    a.pf += Number(m.scoreAway); a.pa += Number(m.scoreHome);
+    if (m.scoreHome > m.scoreAway) { h.w++; a.l++; }
+    else if (m.scoreAway > m.scoreHome) { a.w++; h.l++; }
+    else { h.d++; a.d++; }
+  });
+  return Object.values(st).sort((a, b) => {
+    const pa = a.w*2 + a.d, pb = b.w*2 + b.d;
+    if (pb !== pa) return pb - pa;
+    return (b.pf - b.pa) - (a.pf - a.pa);
+  });
+}
+
+function renderStandings() {
+  document.getElementById('stand-cats').innerHTML = catTabsHTML('standings');
+  const rows = getStandings(activeCat.standings);
+  const rankCls = ['rank-gold','rank-silver','rank-bronze'];
+  const html = rows.length ? `
+    <div style="background:white;border-radius:12px;border:1px solid #e5e7eb;overflow:hidden">
+    <table>
+      <thead><tr>
+        <th>#</th><th>Équipe</th><th>J</th><th>V</th><th>N</th><th>D</th><th>Pts+</th><th>Pts-</th><th>+/-</th><th>Pts</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map((r,i) => {
+          const pts = r.w*2 + r.d;
+          const diff = r.pf - r.pa;
+          return `<tr>
+            <td><span class="${rankCls[i]||''}" style="font-weight:600">${i+1}</span></td>
+            <td class="team-name">${r.name}</td>
+            <td>${r.p}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
+            <td>${r.pf}</td><td>${r.pa}</td>
+            <td style="color:${diff>=0?'#166534':'#991b1b'};font-weight:500">${diff>0?'+'+diff:diff}</td>
+            <td class="pts-cell">${pts}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>` : '<div class="empty">Aucune équipe dans cette catégorie.</div>';
+  document.getElementById('standings-content').innerHTML = html;
+}
+
 // ── ADMIN PASSWORD ───────────────────────────────────────
 function handleAdminTab() {
   if (adminUnlocked) { renderAdminContent(); return; }
