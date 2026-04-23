@@ -216,6 +216,7 @@ let matches = [];    // [{id, cat, field, home, away, date, time, scoreHome, sco
 let activeCat = { standings: 'U11M', matches: 'U11M' };
 let adminUnlocked = false;
 let unsubTeams = null, unsubMatches = null;
+let activeFilterType = 'category'; // Par défaut, on filtre par catégorie
 
 // ── INIT FIREBASE LISTENERS ──────────────────────────────
 async function initData() {
@@ -274,9 +275,27 @@ function catTabsHTML(area) {
   ).join('');
 }
 window.setCat = function(area, cat) {
-  activeCat[area] = cat;
-  if (area === 'standings') renderStandings();
-  if (area === 'matches') renderMatches();
+  if (activeFilterType === 'category') {
+    activeCat[area] = cat;
+    renderMatches();
+  }
+};
+
+// ── FIELD FILTER ─────────────────────────────────────────
+window.setFieldFilter = function(field) {
+  if (activeFilterType === 'field') {
+    activeFieldFilter = field;
+    renderMatches();
+  }
+};
+  window.setFilterType = function(type) {
+  activeFilterType = type;
+  if (type === 'category') {
+    activeFieldFilter = null; // Réinitialiser le filtre par terrain
+  } else {
+    activeCat.matches = 'U11M'; // Réinitialiser la catégorie active
+  }
+  renderMatches();
 };
 
 // ── STANDINGS ────────────────────────────────────────────
@@ -339,43 +358,121 @@ function fieldBadge(f) {
 }
 
 function renderMatches() {
-  document.getElementById('match-cats').innerHTML = catTabsHTML('matches');
-  const cat = activeCat.matches;
-  const catM = matches.filter(m => m.cat === cat);
-  const upcoming = catM.filter(m => m.scoreHome === null || m.scoreHome === undefined)
-    .sort((a,b) => (a.date||'').localeCompare(b.date||''));
-  const results = catM.filter(m => m.scoreHome !== null && m.scoreHome !== undefined)
-    .sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  const FIELDS = ['Haut', 'Bas', 'Gymnase'];
+  const CATS = ['U11M', 'U11F', 'U13M', 'U13F'];
 
-  let html = '';
+  // Sélecteur pour choisir le type de filtre (catégorie ou terrain)
+  const filterTypeHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:12px;align-items:center">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+        <input type="radio" name="filter-type" value="category" ${activeFilterType === 'category' ? 'checked' : ''} onclick="setFilterType('category')">
+        Filtrer par catégorie
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+        <input type="radio" name="filter-type" value="field" ${activeFilterType === 'field' ? 'checked' : ''} onclick="setFilterType('field')">
+        Filtrer par terrain
+      </label>
+    </div>
+  `;
 
+  // Afficher les boutons de filtre en fonction du type sélectionné
+  let filterButtonsHTML = '';
+  if (activeFilterType === 'category') {
+    // Boutons de filtre par catégorie
+    filterButtonsHTML = `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        ${CATS.map(c =>
+          `<button onclick="setCat('matches','${c}')" style="
+            padding:7px 10px;
+            border-radius:8px;
+            border:1px solid ${activeCat.matches===c?'#850606':'#d1d5db'};
+            background:${activeCat.matches===c?'#850606':'white'};
+            color:${activeCat.matches===c?'white':'#374151'};
+            font-size:12px;
+            font-weight:600;
+            cursor:pointer;
+          ">${c}</button>`
+        ).join('')}
+      </div>
+    `;
+  } else {
+    // Boutons de filtre par terrain
+    filterButtonsHTML = `
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        ${FIELDS.map(f =>
+          `<button onclick="setFieldFilter('${f}')" style="
+            padding:7px 10px;
+            border-radius:8px;
+            border:1px solid ${activeFieldFilter===f?'#850606':'#d1d5db'};
+            background:${activeFieldFilter===f?'#850606':'white'};
+            color:${activeFieldFilter===f?'white':'#374151'};
+            font-size:12px;
+            font-weight:600;
+            cursor:pointer;
+          ">Terrain ${f}</button>`
+        ).join('')}
+        <button onclick="setFieldFilter(null)" style="
+          padding:7px 10px;
+          border-radius:8px;
+          border:1px solid ${activeFieldFilter===null?'#850606':'#d1d5db'};
+          background:${activeFieldFilter===null?'#850606':'white'};
+          color:${activeFieldFilter===null?'white':'#374151'};
+          font-size:12px;
+          font-weight:600;
+          cursor:pointer;
+        ">Tous les terrains</button>
+      </div>
+    `;
+  }
+
+  // Filtrer les matchs en fonction du type de filtre
+  let filteredMatches = [];
+  if (activeFilterType === 'category') {
+    filteredMatches = matches.filter(m => m.cat === activeCat.matches);
+  } else {
+    filteredMatches = activeFieldFilter
+      ? matches.filter(m => m.field === activeFieldFilter)
+      : matches;
+  }
+
+  // Séparer les matchs à venir et les résultats
+  const upcoming = filteredMatches.filter(m => m.scoreHome === null || m.scoreHome === undefined)
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const results = filteredMatches.filter(m => m.scoreHome !== null && m.scoreHome !== undefined)
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  // Construire le HTML final
+  let html = filterTypeHTML + filterButtonsHTML;
+
+  // Afficher les matchs à venir
   html += `<div class="section-label">Prochains matchs (${upcoming.length})</div>`;
   if (upcoming.length) {
     html += upcoming.map(m => {
-      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}) : '';
+      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) : '';
       return `<div class="match-card">
         <div class="match-top">
-          <div class="match-teams">${teamName(cat,m.home)} <span class="match-vs">vs</span> ${teamName(cat,m.away)}</div>
+          <div class="match-teams">${teamName(m.cat, m.home)} <span class="match-vs">vs</span> ${teamName(m.cat, m.away)}</div>
           <span class="badge badge-upcoming">À venir</span>
         </div>
-        <div class="match-meta">${fieldBadge(m.field)}<span style="font-size:12px;color:#6b7280">${d}${m.time?' · '+m.time:''}</span></div>
+        <div class="match-meta">${fieldBadge(m.field)}<span style="font-size:12px;color:#6b7280">${d}${m.time ? ' · ' + m.time : ''}</span></div>
       </div>`;
     }).join('');
   } else {
     html += '<div class="empty" style="padding:12px">Aucun match à venir</div>';
   }
 
+  // Afficher les résultats
   html += `<div class="section-label">Résultats (${results.length})</div>`;
   if (results.length) {
     html += results.map(m => {
       const hw = Number(m.scoreHome) > Number(m.scoreAway);
       const draw = Number(m.scoreHome) === Number(m.scoreAway);
-      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}) : '';
+      const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
       const badgeCls = draw ? 'badge-draw' : hw ? 'badge-win' : 'badge-loss';
-      const badgeTxt = draw ? 'Nul' : hw ? teamName(cat,m.home)+' gagne' : teamName(cat,m.away)+' gagne';
+      const badgeTxt = draw ? 'Nul' : hw ? teamName(m.cat, m.home) + ' gagne' : teamName(m.cat, m.away) + ' gagne';
       return `<div class="match-card">
         <div class="match-top">
-          <div class="match-teams">${teamName(cat,m.home)} <span class="match-vs">vs</span> ${teamName(cat,m.away)}</div>
+          <div class="match-teams">${teamName(m.cat, m.home)} <span class="match-vs">vs</span> ${teamName(m.cat, m.away)}</div>
           <div class="match-score">${m.scoreHome} – ${m.scoreAway}</div>
         </div>
         <div class="match-meta">${fieldBadge(m.field)}<span style="font-size:12px;color:#6b7280">${d}</span><span class="badge ${badgeCls}">${badgeTxt}</span></div>
@@ -387,7 +484,16 @@ function renderMatches() {
 
   document.getElementById('matches-content').innerHTML = html;
 }
-
+  
+window.setFilterType = function(type) {
+  activeFilterType = type;
+  if (type === 'category') {
+    activeFieldFilter = null; // Réinitialiser le filtre par terrain
+  } else {
+    activeCat.matches = 'U11M'; // Réinitialiser la catégorie active
+  }
+  renderMatches();
+};
 // ── ADMIN PASSWORD ───────────────────────────────────────
 function handleAdminTab() {
   if (adminUnlocked) { renderAdminContent(); return; }
